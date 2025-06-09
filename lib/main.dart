@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/home_page.dart';
 import 'services/user_service.dart';
+import 'services/cart_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('id_ID', null); // Inisialisasi locale
+  await initializeDateFormatting('id_ID', null); // Initialize locale
   runApp(const MyApp());
 }
 
@@ -25,35 +27,42 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Widget>(
-      future: _getInitialPage(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const MaterialApp(
-            home: Scaffold(body: Center(child: CircularProgressIndicator())),
-            debugShowCheckedModeBanner: false,
-          );
-        }
-        return MaterialApp(
-          title: 'Toko Telur',
-          theme: ThemeData(
-            primarySwatch: Colors.green,
-            useMaterial3: true,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              elevation: 0,
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => CartService())],
+      child: FutureBuilder<Widget>(
+        future: _getInitialPage(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const MaterialApp(
+              home: Scaffold(body: Center(child: CircularProgressIndicator())),
+              debugShowCheckedModeBanner: false,
+            );
+          }
+          return MaterialApp(
+            title: 'Toko Telur',
+            theme: ThemeData(
+              primarySwatch: Colors.green,
+              useMaterial3: true,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                elevation: 0,
+              ),
+              floatingActionButtonTheme: FloatingActionButtonThemeData(
+                backgroundColor: Colors.green[800],
+                foregroundColor: Colors.white,
+              ),
             ),
-          ),
-          home: snapshot.data,
-          debugShowCheckedModeBanner: false,
-          routes: {
-            '/login': (_) => const LoginPage(),
-            '/register': (_) => const RegisterPage(),
-            '/home': (_) => const HomePage(),
-          },
-        );
-      },
+            home: snapshot.data,
+            debugShowCheckedModeBanner: false,
+            routes: {
+              '/login': (_) => const LoginPage(),
+              '/register': (_) => const RegisterPage(),
+              '/home': (_) => const HomePage(),
+            },
+          );
+        },
+      ),
     );
   }
 }

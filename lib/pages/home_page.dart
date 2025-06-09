@@ -6,6 +6,7 @@ import 'detail_page.dart';
 import 'cart_page.dart';
 import 'order_page.dart';
 import '../services/user_service.dart';
+import '../helpers/database_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,8 +27,19 @@ class _HomePageState extends State<HomePage> {
   double? minPrice;
   double? maxPrice;
 
-  final List<String> categories = ['Ayam Biasa', 'Ayam Organik', 'Bebek', 'Puyuh', 'Lainnya'];
-  final List<String> farms = ['Semua Peternakan', 'Peternakan Jaya Abadi', 'Peternakan Sejahtera', 'Peternakan Bebek Bahagia'];
+  final List<String> categories = [
+    'Ayam Biasa',
+    'Ayam Organik',
+    'Bebek',
+    'Puyuh',
+    'Lainnya',
+  ];
+  final List<String> farms = [
+    'Semua Peternakan',
+    'Peternakan Jaya Abadi',
+    'Peternakan Sejahtera',
+    'Peternakan Bebek Bahagia',
+  ];
 
   @override
   void initState() {
@@ -68,9 +80,7 @@ class _HomePageState extends State<HomePage> {
         // Keranjang
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const CartPage(),
-          ),
+          MaterialPageRoute(builder: (context) => const CartPage()),
         ).then((_) {
           // Reset index ketika kembali dari cart
           setState(() {
@@ -154,10 +164,7 @@ class _HomePageState extends State<HomePage> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Colors.green.shade800,
-                Colors.green.shade600,
-              ],
+              colors: [Colors.green.shade800, Colors.green.shade600],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -251,10 +258,7 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
                 gradient: LinearGradient(
-                  colors: [
-                    Colors.white,
-                    Colors.green.shade50,
-                  ],
+                  colors: [Colors.white, Colors.green.shade50],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -312,7 +316,10 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.shade50,
                               borderRadius: BorderRadius.circular(16),
@@ -329,14 +336,19 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 value: selectedCategory,
                                 isExpanded: true,
-                                icon: Icon(Icons.keyboard_arrow_down, color: Colors.green.shade600),
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Colors.green.shade600,
+                                ),
                                 dropdownColor: Colors.white,
                                 items: [
                                   DropdownMenuItem<String>(
                                     value: null,
                                     child: Text(
                                       'Semua Kategori',
-                                      style: TextStyle(color: Colors.green.shade700),
+                                      style: TextStyle(
+                                        color: Colors.green.shade700,
+                                      ),
                                     ),
                                   ),
                                   ...categories.map((String category) {
@@ -344,7 +356,9 @@ class _HomePageState extends State<HomePage> {
                                       value: category,
                                       child: Text(
                                         category,
-                                        style: TextStyle(color: Colors.green.shade700),
+                                        style: TextStyle(
+                                          color: Colors.green.shade700,
+                                        ),
                                       ),
                                     );
                                   }).toList(),
@@ -362,7 +376,10 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.shade50,
                               borderRadius: BorderRadius.circular(16),
@@ -379,14 +396,21 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 value: selectedFarm,
                                 isExpanded: true,
-                                icon: Icon(Icons.keyboard_arrow_down, color: Colors.green.shade600),
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Colors.green.shade600,
+                                ),
                                 dropdownColor: Colors.white,
                                 items: farms.map((String farm) {
                                   return DropdownMenuItem<String>(
-                                    value: farm == 'Semua Peternakan' ? null : farm,
+                                    value: farm == 'Semua Peternakan'
+                                        ? null
+                                        : farm,
                                     child: Text(
                                       farm,
-                                      style: TextStyle(color: Colors.green.shade700),
+                                      style: TextStyle(
+                                        color: Colors.green.shade700,
+                                      ),
                                     ),
                                   );
                                 }).toList(),
@@ -408,11 +432,9 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        
+
         // Content Section
-        Expanded(
-          child: _buildContent(),
-        ),
+        Expanded(child: _buildContent()),
       ],
     );
   }
@@ -455,10 +477,7 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
                 gradient: LinearGradient(
-                  colors: [
-                    Colors.white,
-                    Colors.red.shade50,
-                  ],
+                  colors: [Colors.white, Colors.red.shade50],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -547,10 +566,7 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
                 gradient: LinearGradient(
-                  colors: [
-                    Colors.white,
-                    Colors.green.shade50,
-                  ],
+                  colors: [Colors.white, Colors.green.shade50],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),

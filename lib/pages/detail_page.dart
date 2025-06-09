@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../models/egg_product.dart';
 import '../services/cart_service.dart';
-import 'cart_page.dart';
+import '../pages/cart_page.dart';
+import '../helpers/database_helper.dart';
 
 class EggProductDetailPage extends StatefulWidget {
   final EggProduct product;
 
-  const EggProductDetailPage({
-    super.key,
-    required this.product,
-  });
+  const EggProductDetailPage({super.key, required this.product});
 
   @override
   State<EggProductDetailPage> createState() => _EggProductDetailPageState();
@@ -21,13 +20,12 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
   String selectedCurrency = 'IDR';
   String selectedTimezone = 'WIB';
   String? previousCurrency;
-  
-  // Exchange rates (dalam praktik nyata, ini harus diambil dari API)
+
   final Map<String, double> exchangeRates = {
     'IDR': 1.0,
-    'USD': 0.000067, // 1 IDR = 0.000067 USD (contoh)
-    'EUR': 0.000061, // 1 IDR = 0.000061 EUR (contoh)
-    'GBP': 0.000053, // 1 IDR = 0.000053 GBP (contoh)
+    'USD': 0.000067,
+    'EUR': 0.000061,
+    'GBP': 0.000053,
   };
 
   final Map<String, String> currencySymbols = {
@@ -47,8 +45,20 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
   @override
   void initState() {
     super.initState();
-    // Inisialisasi previousCurrency
-    previousCurrency = selectedCurrency;
+    final cartService = Provider.of<CartService>(context, listen: false);
+
+    // Initialize with cart service values if they exist
+    selectedTimezone = cartService.lockedTimezone ?? 'WIB';
+
+    // Handle currency initialization carefully
+    if (cartService.lockedCurrency != null) {
+      selectedCurrency = cartService.lockedCurrency!;
+    } else {
+      selectedCurrency = selectedTimezone == 'London' ? 'GBP' : 'IDR';
+    }
+
+    // Store the previous currency (excluding GBP if not in London)
+    previousCurrency = selectedTimezone == 'London' ? 'IDR' : selectedCurrency;
   }
 
   double convertPrice(double priceInIDR) {
@@ -57,22 +67,18 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
       double rate = exchangeRates[currency] ?? 1.0;
       return priceInIDR * rate;
     } catch (e) {
-      // Fallback jika ada error
       return priceInIDR;
     }
   }
 
   String getCurrentCurrency() {
-    if (selectedTimezone == 'London') {
-      return 'GBP';
-    }
     return selectedCurrency;
   }
 
   NumberFormat getCurrencyFormat() {
     String currency = getCurrentCurrency();
     String symbol = currencySymbols[currency] ?? 'Rp';
-    
+
     try {
       if (currency == 'IDR') {
         return NumberFormat.currency(locale: 'id_ID', symbol: symbol);
@@ -80,18 +86,30 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
         return NumberFormat.currency(locale: 'en_US', symbol: symbol);
       }
     } catch (e) {
-      // Fallback jika ada error dengan format
       return NumberFormat.currency(locale: 'id_ID', symbol: 'Rp');
     }
   }
 
+  int _getItemsInCart() {
+    final cartService = Provider.of<CartService>(context, listen: false);
+    return cartService.cartItems
+        .where((item) => item.product.id == widget.product.id)
+        .fold(0, (sum, item) => sum + item.quantity);
+  }
+
+  int _getAvailableStock() {
+    return widget.product.stock - _getItemsInCart();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final cartService = Provider.of<CartService>(context, listen: false);
     final currencyFormat = getCurrencyFormat();
     final product = widget.product;
     final convertedPrice = convertPrice(product.discountedPrice);
     final convertedOriginalPrice = convertPrice(product.price);
     final totalPrice = convertedPrice * quantity;
+    final availableStock = _getAvailableStock();
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -140,10 +158,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Colors.green.shade800,
-                Colors.green.shade600,
-              ],
+              colors: [Colors.green.shade800, Colors.green.shade600],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -154,10 +169,10 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF2E7D32), // Hijau gelap (Green-800)
-              Color(0xFF4CAF50), // Hijau sedang (Green-600)
-              Color(0xFF81C784), // Hijau muda (Green-300)
-              Color(0xFFE8F5E9), // Hijau sangat muda (Green-50)
+              Color(0xFF2E7D32),
+              Color(0xFF4CAF50),
+              Color(0xFF81C784),
+              Color(0xFFE8F5E9),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -168,7 +183,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // Product Image Section
                 Container(
                   margin: const EdgeInsets.all(16),
                   child: Card(
@@ -181,10 +195,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(28),
                         gradient: LinearGradient(
-                          colors: [
-                            Colors.white,
-                            Colors.green.shade50,
-                          ],
+                          colors: [Colors.white, Colors.green.shade50],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                         ),
@@ -198,16 +209,17 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                               child: Image.network(
                                 product.imageUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.green.shade100,
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.egg_rounded,
-                                      size: 64,
-                                      color: Colors.green.shade700,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      color: Colors.green.shade100,
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.egg_rounded,
+                                          size: 64,
+                                          color: Colors.green.shade700,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
                               ),
                             ),
                           ),
@@ -216,7 +228,10 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                               top: 16,
                               right: 16,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.red.shade600,
                                   borderRadius: BorderRadius.circular(20),
@@ -244,7 +259,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                   ),
                 ),
 
-                // Product Details Section
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   child: Card(
@@ -257,10 +271,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(28),
                         gradient: LinearGradient(
-                          colors: [
-                            Colors.white,
-                            Colors.green.shade50,
-                          ],
+                          colors: [Colors.white, Colors.green.shade50],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                         ),
@@ -270,7 +281,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Product Header
                             Row(
                               children: [
                                 Container(
@@ -301,7 +311,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                             ),
                             const SizedBox(height: 20),
 
-                            // Currency and Timezone Selection
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
@@ -321,10 +330,42 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 16),
-                                  
-                                  // Timezone Selection
+
+                                  if (cartService.cartItems.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.orange.shade200,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.info_outline,
+                                            size: 16,
+                                            color: Colors.orange.shade600,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Mata uang terkunci ke ${cartService.lockedCurrency} karena ada item di keranjang',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.orange.shade700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Tujuan Pesanan:',
@@ -338,31 +379,42 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                       Container(
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.blue.shade300),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.blue.shade300,
+                                          ),
                                         ),
                                         child: DropdownButtonHideUnderline(
                                           child: DropdownButton<String>(
                                             value: selectedTimezone,
                                             isExpanded: true,
-                                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                                            items: timezones.entries.map((entry) {
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                            ),
+                                            items: timezones.entries.map((
+                                              entry,
+                                            ) {
                                               return DropdownMenuItem(
                                                 value: entry.key,
                                                 child: Row(
                                                   children: [
                                                     Icon(
-                                                      entry.key == 'London' 
-                                                        ? Icons.location_city 
-                                                        : Icons.access_time,
+                                                      entry.key == 'London'
+                                                          ? Icons.location_city
+                                                          : Icons.access_time,
                                                       size: 16,
-                                                      color: Colors.blue.shade600,
+                                                      color:
+                                                          Colors.blue.shade600,
                                                     ),
                                                     const SizedBox(width: 8),
                                                     Text(
                                                       entry.value,
                                                       style: TextStyle(
-                                                        color: Colors.blue.shade800,
+                                                        color: Colors
+                                                            .blue
+                                                            .shade800,
                                                         fontSize: 14,
                                                       ),
                                                     ),
@@ -372,21 +424,26 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                             }).toList(),
                                             onChanged: (value) {
                                               setState(() {
-                                                // Simpan currency sebelumnya jika bukan London
-                                                if (selectedTimezone != 'London') {
-                                                  previousCurrency = selectedCurrency;
+                                                if (selectedTimezone !=
+                                                    'London') {
+                                                  previousCurrency =
+                                                      selectedCurrency;
                                                 }
-                                                
+
                                                 selectedTimezone = value!;
-                                                
+
                                                 if (value == 'London') {
-                                                  // Auto set currency to GBP for London
                                                   selectedCurrency = 'GBP';
                                                 } else {
-                                                  // Restore previous currency or default to IDR
-                                                  selectedCurrency = previousCurrency ?? 'IDR';
-                                                  // Pastikan currency yang dipilih valid untuk non-London
-                                                  if (!['IDR', 'USD', 'EUR'].contains(selectedCurrency)) {
+                                                  selectedCurrency =
+                                                      previousCurrency ?? 'IDR';
+                                                  if (![
+                                                    'IDR',
+                                                    'USD',
+                                                    'EUR',
+                                                  ].contains(
+                                                    selectedCurrency,
+                                                  )) {
                                                     selectedCurrency = 'IDR';
                                                   }
                                                 }
@@ -397,13 +454,13 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                       ),
                                     ],
                                   ),
-                                  
+
                                   const SizedBox(height: 16),
-                                  
-                                  // Currency Selection (only if not London)
+
                                   if (selectedTimezone != 'London') ...[
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'Mata Uang:',
@@ -417,44 +474,120 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                         Container(
                                           decoration: BoxDecoration(
                                             color: Colors.white,
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(color: Colors.blue.shade300),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.blue.shade300,
+                                            ),
                                           ),
                                           child: DropdownButtonHideUnderline(
                                             child: DropdownButton<String>(
                                               value: selectedCurrency,
                                               isExpanded: true,
-                                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                                              items: ['IDR', 'USD', 'EUR'].map((currency) {
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                  ),
+                                              items: ['IDR', 'USD', 'EUR'].map((
+                                                currency,
+                                              ) {
+                                                bool isLockedCurrency =
+                                                    cartService
+                                                        .lockedCurrency ==
+                                                    currency;
+                                                bool isSelected =
+                                                    selectedCurrency ==
+                                                    currency;
+                                                bool isAllowed =
+                                                    cartService
+                                                        .cartItems
+                                                        .isEmpty ||
+                                                    isLockedCurrency ||
+                                                    isSelected;
+
                                                 return DropdownMenuItem(
                                                   value: currency,
+                                                  enabled: isAllowed,
                                                   child: Row(
                                                     children: [
                                                       Text(
                                                         currencySymbols[currency]!,
                                                         style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Colors.blue.shade600,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors
+                                                              .blue
+                                                              .shade600,
                                                         ),
                                                       ),
                                                       const SizedBox(width: 8),
                                                       Text(
                                                         currency,
                                                         style: TextStyle(
-                                                          color: Colors.blue.shade800,
+                                                          color: isAllowed
+                                                              ? Colors
+                                                                    .blue
+                                                                    .shade800
+                                                              : Colors.grey,
                                                           fontSize: 14,
                                                         ),
                                                       ),
+                                                      if (cartService
+                                                              .cartItems
+                                                              .isNotEmpty &&
+                                                          !isLockedCurrency &&
+                                                          !isSelected)
+                                                        const Padding(
+                                                          padding:
+                                                              EdgeInsets.only(
+                                                                left: 8,
+                                                              ),
+                                                          child: Icon(
+                                                            Icons.lock,
+                                                            size: 14,
+                                                            color: Colors.grey,
+                                                          ),
+                                                        ),
                                                     ],
                                                   ),
                                                 );
                                               }).toList(),
                                               onChanged: (value) {
                                                 if (value != null) {
-                                                  setState(() {
-                                                    selectedCurrency = value;
-                                                    previousCurrency = value;
-                                                  });
+                                                  if (cartService
+                                                          .cartItems
+                                                          .isEmpty ||
+                                                      value ==
+                                                          cartService
+                                                              .lockedCurrency) {
+                                                    setState(() {
+                                                      selectedCurrency = value;
+                                                      previousCurrency = value;
+                                                    });
+                                                  } else {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Mata uang sudah dipilih sebagai ${cartService.lockedCurrency}. '
+                                                          'Tidak bisa mengubah mata uang setelah ada item di keranjang.',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red.shade600,
+                                                        duration:
+                                                            const Duration(
+                                                              seconds: 3,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  }
                                                 }
                                               },
                                             ),
@@ -468,7 +601,9 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                       decoration: BoxDecoration(
                                         color: Colors.orange.shade50,
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: Colors.orange.shade200),
+                                        border: Border.all(
+                                          color: Colors.orange.shade200,
+                                        ),
                                       ),
                                       child: Row(
                                         children: [
@@ -496,13 +631,14 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                             ),
                             const SizedBox(height: 20),
 
-                            // Price Section
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.green.shade200),
+                                border: Border.all(
+                                  color: Colors.green.shade200,
+                                ),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,10 +647,13 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                     children: [
                                       if (product.isOnDiscount) ...[
                                         Text(
-                                          currencyFormat.format(convertedOriginalPrice),
+                                          currencyFormat.format(
+                                            convertedOriginalPrice,
+                                          ),
                                           style: TextStyle(
                                             fontSize: 16,
-                                            decoration: TextDecoration.lineThrough,
+                                            decoration:
+                                                TextDecoration.lineThrough,
                                             color: Colors.grey.shade600,
                                           ),
                                         ),
@@ -546,19 +685,24 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Rating Section
                             if (product.rating != null)
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: Colors.orange.shade50,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.orange.shade200),
+                                  border: Border.all(
+                                    color: Colors.orange.shade200,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.star_rounded, color: Colors.orange.shade600, size: 20),
+                                    Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.orange.shade600,
+                                      size: 20,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${product.rating?.toStringAsFixed(1)} (${product.reviewCount ?? 0} ulasan)',
@@ -573,7 +717,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                               ),
                             const SizedBox(height: 20),
 
-                            // Description
                             Text(
                               'Deskripsi Produk',
                               style: TextStyle(
@@ -588,7 +731,9 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                               decoration: BoxDecoration(
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.green.shade200),
+                                border: Border.all(
+                                  color: Colors.green.shade200,
+                                ),
                               ),
                               child: Text(
                                 product.description,
@@ -601,7 +746,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                             ),
                             const SizedBox(height: 24),
 
-                            // Product Information
                             Text(
                               'Informasi Produk',
                               style: TextStyle(
@@ -612,31 +756,49 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                             ),
                             const SizedBox(height: 16),
                             _buildInfoCard('Kategori', product.category),
-                            _buildInfoCard('Stok', product.stock.toString()),
-                            _buildInfoCard('Berat', product.weight != null ? '${product.weight} gram' : '-'),
-                            _buildInfoCard('Asal Peternakan', product.farmOrigin),
+                            _buildInfoCard(
+                              'Stok',
+                              '$availableStock tersedia dari ${product.stock}',
+                            ),
+                            _buildInfoCard(
+                              'Berat',
+                              product.weight != null
+                                  ? '${product.weight} gram'
+                                  : '-',
+                            ),
+                            _buildInfoCard(
+                              'Asal Peternakan',
+                              product.farmOrigin,
+                            ),
                             _buildInfoCard(
                               'Tanggal Panen',
                               product.harvestDate != null
-                                  ? DateFormat.yMMMMd('id_ID').format(product.harvestDate!)
+                                  ? DateFormat.yMMMMd(
+                                      'id_ID',
+                                    ).format(product.harvestDate!)
                                   : '-',
                             ),
-                            _buildInfoCard('Organik', product.isOrganic ? 'Ya' : 'Tidak'),
+                            _buildInfoCard(
+                              'Organik',
+                              product.isOrganic ? 'Ya' : 'Tidak',
+                            ),
 
                             const SizedBox(height: 32),
 
-                            // Quantity Section
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.green.shade200),
+                                border: Border.all(
+                                  color: Colors.green.shade200,
+                                ),
                               ),
                               child: Column(
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Jumlah:",
@@ -649,8 +811,12 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                       Container(
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.green.shade300),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.green.shade300,
+                                          ),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -667,7 +833,10 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                               ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                  ),
                                               child: Text(
                                                 quantity.toString(),
                                                 style: TextStyle(
@@ -679,13 +848,33 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                             ),
                                             IconButton(
                                               onPressed: () {
-                                                if (quantity < product.stock) {
+                                                if (quantity < availableStock) {
                                                   setState(() => quantity++);
+                                                } else {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Stok tidak mencukupi! Stok tersedia: $availableStock',
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.red.shade600,
+                                                      duration: const Duration(
+                                                        seconds: 2,
+                                                      ),
+                                                    ),
+                                                  );
                                                 }
                                               },
                                               icon: Icon(
                                                 Icons.add_circle_outline,
-                                                color: Colors.green.shade600,
+                                                color: quantity < availableStock
+                                                    ? Colors.green.shade600
+                                                    : Colors.grey,
                                               ),
                                             ),
                                           ],
@@ -701,7 +890,8 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           'Total Harga:',
@@ -727,43 +917,87 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                             ),
                             const SizedBox(height: 32),
 
-                            // Add to Cart Button
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
-                                onPressed: () {
-                                  // Bisa menambahkan logic untuk menyimpan currency dan timezone ke cart item
-                                  CartService.addToCartWithQuantity(product, quantity, selectedCurrency, selectedTimezone);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Berhasil menambahkan $quantity ${product.name} ke keranjang\n'
-                                        'Tujuan: ${timezones[selectedTimezone]}\n'
-                                        'Mata Uang: ${getCurrentCurrency()}',
-                                        style: const TextStyle(color: Colors.white),
-                                      ),
-                                      backgroundColor: Colors.green.shade600,
-                                      duration: const Duration(seconds: 3),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white),
+                                onPressed: availableStock > 0
+                                    ? () {
+                                        try {
+                                          cartService.addToCartWithQuantity(
+                                            product,
+                                            quantity,
+                                            getCurrentCurrency(),
+                                            selectedTimezone,
+                                          );
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Berhasil menambahkan $quantity ${product.name} ke keranjang\n'
+                                                'Tujuan: ${timezones[selectedTimezone]}\n'
+                                                'Mata Uang: ${getCurrentCurrency()}',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              backgroundColor:
+                                                  Colors.green.shade600,
+                                              duration: const Duration(
+                                                seconds: 3,
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                          );
+                                          setState(() {});
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                e.toString(),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              backgroundColor:
+                                                  Colors.red.shade600,
+                                              duration: const Duration(
+                                                seconds: 3,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    : null,
+                                icon: const Icon(
+                                  Icons.shopping_cart_rounded,
+                                  color: Colors.white,
+                                ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green.shade600,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  backgroundColor: availableStock > 0
+                                      ? Colors.green.shade600
+                                      : Colors.grey,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   elevation: 4,
                                   shadowColor: Colors.green.withOpacity(0.4),
                                 ),
-                                label: const Text(
-                                  "Tambahkan ke Keranjang",
-                                  style: TextStyle(
+                                label: Text(
+                                  availableStock > 0
+                                      ? "Tambahkan ke Keranjang"
+                                      : "Stok Habis",
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,

@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+
+/// Model untuk produk telur
 class EggProduct {
   final String id;
   final String name;
@@ -31,19 +34,19 @@ class EggProduct {
     this.reviewCount,
   });
 
-  // Harga setelah diskon
+  /// Harga setelah diskon
   double get discountedPrice {
     if (discount == null || discount == 0) return price;
     return price * (1 - discount! / 100);
   }
 
-  // Apakah produk sedang diskon
+  /// Apakah produk sedang diskon
   bool get isOnDiscount => discount != null && discount! > 0;
 
-  // Apakah stok hampir habis
+  /// Apakah stok hampir habis
   bool get isLowStock => stock < 10;
 
-  // Factory constructor untuk membuat instance dari JSON
+  /// Konversi dari JSON (untuk API)
   factory EggProduct.fromJson(Map<String, dynamic> json) {
     return EggProduct(
       id: json['id'] as String,
@@ -53,19 +56,19 @@ class EggProduct {
       stock: json['stock'] as int,
       imageUrl: json['imageUrl'] as String,
       category: json['category'] as String,
-      weight: json['weight']?.toDouble(),
-      harvestDate: json['harvestDate'] != null 
-          ? DateTime.parse(json['harvestDate'] as String) 
+      weight: (json['weight'] as num?)?.toDouble(),
+      harvestDate: json['harvestDate'] != null
+          ? DateTime.tryParse(json['harvestDate'])
           : null,
-      farmOrigin: json['farmOrigin'] as String? ?? 'Lokal',
-      isOrganic: json['isOrganic'] as bool? ?? false,
+      farmOrigin: json['farmOrigin'] ?? 'Lokal',
+      isOrganic: json['isOrganic'] ?? false,
       discount: (json['discount'] as num?)?.toDouble(),
       rating: (json['rating'] as num?)?.toDouble(),
       reviewCount: json['reviewCount'] as int?,
     );
   }
 
-  // Convert instance ke JSON
+  /// Konversi ke JSON (untuk API)
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -85,7 +88,13 @@ class EggProduct {
     };
   }
 
-  // Copy with method untuk membuat salinan dengan beberapa perubahan
+  /// Konversi ke Map (untuk SQLite)
+  Map<String, dynamic> toMap() => toJson();
+
+  /// Konversi dari Map (untuk SQLite)
+  factory EggProduct.fromMap(Map<String, dynamic> map) => EggProduct.fromJson(map);
+
+  /// Copy dengan perubahan
   EggProduct copyWith({
     String? id,
     String? name,
@@ -121,22 +130,18 @@ class EggProduct {
   }
 
   @override
-  String toString() {
-    return 'EggProduct{id: $id, name: $name, price: $price, stock: $stock}';
-  }
+  String toString() =>
+      'EggProduct{id: $id, name: $name, price: $price, stock: $stock}';
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is EggProduct &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+      identical(this, other) || (other is EggProduct && id == other.id);
 
   @override
   int get hashCode => id.hashCode;
 }
 
-// Enum untuk kategori produk telur
+/// Enum untuk kategori produk telur
 enum EggCategory {
   chickenRegular('Ayam Biasa'),
   chickenOrganic('Ayam Organik'),
@@ -148,7 +153,7 @@ enum EggCategory {
   const EggCategory(this.displayName);
 }
 
-// Contoh data dummy untuk pengembangan
+/// Dummy data untuk pengujian / pengembangan
 List<EggProduct> dummyEggProducts = [
   EggProduct(
     id: '1',
@@ -159,7 +164,7 @@ List<EggProduct> dummyEggProducts = [
     imageUrl: 'https://example.com/images/premium_egg.jpg',
     category: 'premium',
     weight: 60,
-    harvestDate: DateTime.now().subtract(Duration(days: 2)),
+    harvestDate: DateTime.now().subtract(const Duration(days: 2)),
     farmOrigin: 'Peternakan Jaya Abadi',
     isOrganic: true,
     rating: 4.8,
@@ -174,7 +179,7 @@ List<EggProduct> dummyEggProducts = [
     imageUrl: 'https://example.com/images/regular_egg.jpg',
     category: 'regular',
     weight: 55,
-    harvestDate: DateTime.now().subtract(Duration(days: 1)),
+    harvestDate: DateTime.now().subtract(const Duration(days: 1)),
     farmOrigin: 'Peternakan Sejahtera',
     isOrganic: false,
     discount: 10,
@@ -190,7 +195,7 @@ List<EggProduct> dummyEggProducts = [
     imageUrl: 'https://example.com/images/duck_egg.jpg',
     category: 'premium',
     weight: 80,
-    harvestDate: DateTime.now().subtract(Duration(days: 3)),
+    harvestDate: DateTime.now().subtract(const Duration(days: 3)),
     farmOrigin: 'Peternakan Bebek Bahagia',
     isOrganic: true,
     rating: 4.9,

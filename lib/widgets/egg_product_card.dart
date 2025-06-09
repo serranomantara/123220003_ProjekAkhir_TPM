@@ -8,11 +8,7 @@ class EggProductCard extends StatelessWidget {
   final EggProduct product;
   final VoidCallback onTap;
 
-  const EggProductCard({
-    super.key,
-    required this.product,
-    required this.onTap,
-  });
+  const EggProductCard({super.key, required this.product, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +42,9 @@ class EggProductCard extends StatelessWidget {
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
                         image: DecorationImage(
                           image: NetworkImage(product.imageUrl),
                           fit: BoxFit.cover,
@@ -68,7 +66,9 @@ class EggProductCard extends StatelessWidget {
                     Positioned.fill(
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -86,7 +86,10 @@ class EggProductCard extends StatelessWidget {
                         top: 8,
                         right: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.redAccent,
                             borderRadius: BorderRadius.circular(12),
@@ -118,7 +121,9 @@ class EggProductCard extends StatelessWidget {
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(16),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,25 +171,36 @@ class EggProductCard extends StatelessWidget {
                           Icon(
                             product.isOrganic ? Icons.eco : Icons.eco_outlined,
                             size: 14,
-                            color: product.isOrganic ? Colors.green : Colors.grey,
+                            color: product.isOrganic
+                                ? Colors.green
+                                : Colors.grey,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             product.isOrganic ? 'Organik' : 'Non-organik',
                             style: TextStyle(
                               fontSize: 12,
-                              color: product.isOrganic ? Colors.green.shade700 : Colors.black54,
+                              color: product.isOrganic
+                                  ? Colors.green.shade700
+                                  : Colors.black54,
                             ),
                           ),
                           const Spacer(),
                           if (product.rating != null)
                             Row(
                               children: [
-                                const Icon(Icons.star, color: Colors.orange, size: 14),
+                                const Icon(
+                                  Icons.star,
+                                  color: Colors.orange,
+                                  size: 14,
+                                ),
                                 const SizedBox(width: 2),
                                 Text(
                                   '${product.rating?.toStringAsFixed(1)}',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
@@ -194,13 +210,21 @@ class EggProductCard extends StatelessWidget {
                       // Stok
                       Row(
                         children: [
-                          const Icon(Icons.inventory_2_outlined, size: 14, color: Colors.black45),
+                          const Icon(
+                            Icons.inventory_2_outlined,
+                            size: 14,
+                            color: Colors.black45,
+                          ),
                           const SizedBox(width: 4),
                           Text(
-                            product.isLowStock ? 'Stok Hampir Habis' : 'Stok: ${product.stock}',
+                            product.isLowStock
+                                ? 'Stok Hampir Habis'
+                                : 'Stok: ${product.stock}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: product.isLowStock ? Colors.red : Colors.black54,
+                              color: product.isLowStock
+                                  ? Colors.red
+                                  : Colors.black54,
                             ),
                           ),
                         ],

@@ -39,10 +39,7 @@ class _RegisterPageState extends State<RegisterPage> {
         _error = result ?? 'Registrasi gagal. Silakan coba lagi.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_error!),
-          backgroundColor: Colors.red.shade600,
-        ),
+        SnackBar(content: Text(_error!), backgroundColor: Colors.red.shade600),
       );
     }
 
@@ -90,10 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(28),
                   gradient: LinearGradient(
-                    colors: [
-                      Colors.white,
-                      Colors.green.shade50,
-                    ],
+                    colors: [Colors.white, Colors.green.shade50],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -118,7 +112,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SizedBox(height: 20),
                       Text(
                         'Buat Akun',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.green.shade800,
                               letterSpacing: 1.2,
@@ -140,18 +135,28 @@ class _RegisterPageState extends State<RegisterPage> {
                         decoration: InputDecoration(
                           labelText: 'Username',
                           labelStyle: TextStyle(color: Colors.green.shade700),
-                          prefixIcon: Icon(Icons.person_outline, color: Colors.green.shade600),
+                          prefixIcon: Icon(
+                            Icons.person_outline,
+                            color: Colors.green.shade600,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.green.shade300),
+                            borderSide: BorderSide(
+                              color: Colors.green.shade300,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.green.shade600, width: 2),
+                            borderSide: BorderSide(
+                              color: Colors.green.shade600,
+                              width: 2,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.green.shade300),
+                            borderSide: BorderSide(
+                              color: Colors.green.shade300,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.green.shade50,
@@ -163,18 +168,28 @@ class _RegisterPageState extends State<RegisterPage> {
                         decoration: InputDecoration(
                           labelText: 'Password',
                           labelStyle: TextStyle(color: Colors.green.shade700),
-                          prefixIcon: Icon(Icons.lock_outline, color: Colors.green.shade600),
+                          prefixIcon: Icon(
+                            Icons.lock_outline,
+                            color: Colors.green.shade600,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.green.shade300),
+                            borderSide: BorderSide(
+                              color: Colors.green.shade300,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.green.shade600, width: 2),
+                            borderSide: BorderSide(
+                              color: Colors.green.shade600,
+                              width: 2,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.green.shade300),
+                            borderSide: BorderSide(
+                              color: Colors.green.shade300,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.green.shade50,
@@ -184,7 +199,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       if (_error != null) ...[
                         const SizedBox(height: 16),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.red.shade50,
                             borderRadius: BorderRadius.circular(8),
@@ -192,12 +210,19 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline, color: Colors.red.shade600, size: 20),
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red.shade600,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _error!,
-                                  style: TextStyle(color: Colors.red.shade700, fontSize: 14),
+                                  style: TextStyle(
+                                    color: Colors.red.shade700,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
                             ],
@@ -208,7 +233,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          icon: const Icon(Icons.person_add_rounded, color: Colors.white),
+                          icon: const Icon(
+                            Icons.person_add_rounded,
+                            color: Colors.white,
+                          ),
                           onPressed: _isLoading ? null : _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green.shade600,
@@ -243,7 +271,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextButton(
                         onPressed: () => Navigator.pop(context),
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                         ),
                         child: RichText(
                           text: TextSpan(

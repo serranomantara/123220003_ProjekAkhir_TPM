@@ -27,7 +27,10 @@ class Order {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       items: cartItems.map((item) => OrderItem.fromCartItem(item)).toList(),
       checkoutTime: DateTime.now(),
-      totalPrice: cartItems.fold(0, (sum, item) => sum + (item.product.discountedPrice * item.quantity)),
+      totalPrice: cartItems.fold(
+        0,
+        (sum, item) => sum + (item.product.discountedPrice * item.quantity),
+      ),
       currency: currency,
       timezone: timezone,
     );
@@ -40,7 +43,11 @@ class Order {
   String get formattedTotal {
     final format = NumberFormat.currency(
       locale: currency == 'IDR' ? 'id_ID' : 'en_US',
-      symbol: currency == 'IDR' ? 'Rp' : currency == 'USD' ? '\$' : '€',
+      symbol: currency == 'IDR'
+          ? 'Rp'
+          : currency == 'USD'
+          ? '\$'
+          : '€',
     );
     return format.format(totalPrice);
   }
@@ -86,10 +93,7 @@ class CartItem {
   final EggProduct product;
   final int quantity;
 
-  CartItem({
-    required this.product,
-    required this.quantity,
-  });
+  CartItem({required this.product, required this.quantity});
 
   double get totalPrice => product.discountedPrice * quantity;
 }

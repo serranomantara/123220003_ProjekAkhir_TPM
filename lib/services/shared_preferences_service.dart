@@ -36,14 +36,20 @@ class SharedPreferencesService {
     final prefs = await SharedPreferences.getInstance();
     final favorites = await getFavorites();
     favorites.add(product);
-    await prefs.setString(_keyFavorites, jsonEncode(favorites.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+      _keyFavorites,
+      jsonEncode(favorites.map((e) => e.toJson()).toList()),
+    );
   }
 
   Future<void> removeFavorite(String id) async {
     final prefs = await SharedPreferences.getInstance();
     final favorites = await getFavorites();
     favorites.removeWhere((product) => product.id == id);
-    await prefs.setString(_keyFavorites, jsonEncode(favorites.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+      _keyFavorites,
+      jsonEncode(favorites.map((e) => e.toJson()).toList()),
+    );
   }
 
   Future<List<EggProduct>> getFavorites() async {

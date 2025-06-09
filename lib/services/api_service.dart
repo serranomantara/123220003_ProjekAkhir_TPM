@@ -3,15 +3,21 @@ import 'package:http/http.dart' as http;
 import '../models/egg_product.dart';
 
 class EggStoreApi {
-  static const String baseUrl = 'https://681388b3129f6313e2119693.mockapi.io/api/v1';
+  static const String baseUrl =
+      'https://681388b3129f6313e2119693.mockapi.io/api/v1';
 
   // Mendapatkan daftar produk telur
-  Future<List<EggProduct>> fetchProducts({String? category, String? farm}) async {
+  Future<List<EggProduct>> fetchProducts({
+    String? category,
+    String? farm,
+  }) async {
     try {
       String query = '';
       if (category != null) query += 'category=$category&';
       if (farm != null) query += 'farm=$farm&';
-      query = query.isNotEmpty ? '?' + query.substring(0, query.length - 1) : '';
+      query = query.isNotEmpty
+          ? '?' + query.substring(0, query.length - 1)
+          : '';
 
       final response = await http.get(Uri.parse('$baseUrl/eggs$query'));
 

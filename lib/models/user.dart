@@ -6,17 +6,11 @@ class User {
 
   // Convert User object to Map untuk disimpan di SharedPreferences
   Map<String, dynamic> toJson() {
-    return {
-      'username': username,
-      'password': password,
-    };
+    return {'username': username, 'password': password};
   }
 
   // Convert Map dari SharedPreferences menjadi User object
   factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      username: json['username'],
-      password: json['password'],
-    );
+    return User(username: json['username'], password: json['password']);
   }
 }
