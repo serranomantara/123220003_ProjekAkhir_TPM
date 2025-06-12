@@ -5,6 +5,8 @@ import '../widgets/egg_product_card.dart';
 import 'detail_page.dart';
 import 'cart_page.dart';
 import 'order_page.dart';
+import 'kesanpesan_page.dart';
+import 'user_page.dart';
 import '../services/user_service.dart';
 import '../helpers/database_helper.dart';
 
@@ -16,10 +18,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<EggProduct> eggProducts = [];
+  List<EggProduct> allEggProducts = []; // Store all products
+  List<EggProduct> filteredEggProducts = []; // Store filtered products
   bool isLoading = true;
   String? error;
   int _currentIndex = 0;
+  String? userName;
 
   // Filter variables
   String? selectedCategory;
@@ -45,6 +49,14 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     loadEggProducts();
+    loadUserName();
+  }
+
+  Future<void> loadUserName() async {
+    final name = await UserService.getCurrentUserName();
+    setState(() {
+      userName = name;
+    });
   }
 
   Future<void> loadEggProducts() async {
@@ -55,16 +67,62 @@ class _HomePageState extends State<HomePage> {
       });
 
       final productList = await EggStoreApi().fetchProducts();
+
+      // Map the products to include local assets
+      final mappedProducts = productList.map((product) {
+        return product.copyWith(
+          imageUrl: product.assetImage, // Use the assetImage getter
+        );
+      }).toList();
+
       setState(() {
-        eggProducts = productList;
+        allEggProducts = mappedProducts;
         isLoading = false;
       });
+      
+      // Apply filters after loading products
+      applyFilters();
     } catch (e) {
       setState(() {
         error = e.toString();
         isLoading = false;
       });
     }
+  }
+
+  void applyFilters() {
+    List<EggProduct> filtered = List.from(allEggProducts);
+
+    // Apply category filter
+    if (selectedCategory != null && selectedCategory!.isNotEmpty) {
+      filtered = filtered.where((product) {
+        return product.category.toLowerCase() == selectedCategory!.toLowerCase();
+      }).toList();
+    }
+
+    // Apply farm filter - FIX: menggunakan farmOrigin bukan farm
+    if (selectedFarm != null && selectedFarm!.isNotEmpty) {
+      filtered = filtered.where((product) {
+        return product.farmOrigin.toLowerCase().contains(selectedFarm!.toLowerCase());
+      }).toList();
+    }
+
+    // Apply price range filter
+    if (minPrice != null) {
+      filtered = filtered.where((product) {
+        return product.discountedPrice >= minPrice!;
+      }).toList();
+    }
+
+    if (maxPrice != null) {
+      filtered = filtered.where((product) {
+        return product.discountedPrice <= maxPrice!;
+      }).toList();
+    }
+
+    setState(() {
+      filteredEggProducts = filtered;
+    });
   }
 
   void _onBottomNavTap(int index) {
@@ -74,7 +132,7 @@ class _HomePageState extends State<HomePage> {
 
     switch (index) {
       case 0:
-        // Home - sudah di halaman ini
+        // Home - already on this page
         break;
       case 1:
         // Keranjang
@@ -82,7 +140,6 @@ class _HomePageState extends State<HomePage> {
           context,
           MaterialPageRoute(builder: (context) => const CartPage()),
         ).then((_) {
-          // Reset index ketika kembali dari cart
           setState(() {
             _currentIndex = 0;
           });
@@ -99,7 +156,17 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ).then((_) {
-          // Reset index ketika kembali dari order
+          setState(() {
+            _currentIndex = 0;
+          });
+        });
+        break;
+      case 3:
+        // Kesan Pesan
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const KesanPesanPage()),
+        ).then((_) {
           setState(() {
             _currentIndex = 0;
           });
@@ -142,6 +209,43 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.green.shade800.withOpacity(0.95),
         foregroundColor: Colors.white,
         actions: [
+          // User Info Button
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UserPage()),
+              ).then((_) => loadUserName()); // Refresh user name when back
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    child: Icon(Icons.person, size: 16, color: Colors.white),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    userName ?? 'User',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Logout Button
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
@@ -194,6 +298,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+      // In the bottomNavigationBar section of your home_page.dart
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -235,6 +340,11 @@ class _HomePageState extends State<HomePage> {
               icon: Icon(Icons.receipt_long_outlined),
               activeIcon: Icon(Icons.receipt_long_rounded),
               label: 'Pesanan',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.message_outlined),
+              activeIcon: Icon(Icons.message_rounded),
+              label: 'Kesan Pesan',
             ),
           ],
         ),
@@ -367,7 +477,7 @@ class _HomePageState extends State<HomePage> {
                                   setState(() {
                                     selectedCategory = value;
                                   });
-                                  loadEggProducts();
+                                  applyFilters(); // Apply filters when category changes
                                 },
                               ),
                             ),
@@ -418,13 +528,132 @@ class _HomePageState extends State<HomePage> {
                                   setState(() {
                                     selectedFarm = value;
                                   });
-                                  loadEggProducts();
+                                  applyFilters(); // Apply filters when farm changes
                                 },
                               ),
                             ),
                           ),
                         ),
                       ],
+                    ),
+                    // Add price filter section
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.green.shade300),
+                            ),
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Harga Min',
+                                hintStyle: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontSize: 14,
+                                ),
+                                border: InputBorder.none,
+                                prefixText: 'Rp ',
+                                prefixStyle: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontSize: 14,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  minPrice = double.tryParse(value);
+                                });
+                                applyFilters();
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.green.shade300),
+                            ),
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Harga Max',
+                                hintStyle: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontSize: 14,
+                                ),
+                                border: InputBorder.none,
+                                prefixText: 'Rp ',
+                                prefixStyle: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontSize: 14,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  maxPrice = double.tryParse(value);
+                                });
+                                applyFilters();
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Clear filters button
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            selectedCategory = null;
+                            selectedFarm = null;
+                            minPrice = null;
+                            maxPrice = null;
+                          });
+                          applyFilters();
+                        },
+                        icon: const Icon(Icons.clear_all, color: Colors.white, size: 18),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade600,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
+                          shadowColor: Colors.green.withOpacity(0.4),
+                        ),
+                        label: const Text(
+                          'Hapus Filter',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -552,7 +781,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    if (eggProducts.isEmpty) {
+    if (filteredEggProducts.isEmpty) {
       return Center(
         child: Container(
           margin: const EdgeInsets.all(24),
@@ -626,9 +855,9 @@ class _HomePageState extends State<HomePage> {
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
         ),
-        itemCount: eggProducts.length,
+        itemCount: filteredEggProducts.length,
         itemBuilder: (context, index) {
-          final product = eggProducts[index];
+          final product = filteredEggProducts[index];
           return EggProductCard(
             product: product,
             onTap: () {

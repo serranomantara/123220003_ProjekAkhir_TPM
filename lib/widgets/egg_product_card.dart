@@ -1,5 +1,4 @@
 // egg_product_card.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/egg_product.dart';
@@ -13,6 +12,28 @@ class EggProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp');
+
+    // Default image paths for different egg types
+    final defaultImages = {
+      'ayam negeri': 'assets/images/telur_ayam_negeri.jpeg',
+      'ayam super': 'assets/images/telur_ayam_super.jpeg',
+      'bebek': 'assets/images/telur_bebek.jpeg',
+      'omega': 'assets/images/telur_omega.jpg',
+      'puyuh': 'assets/images/telur_puyuh.jpeg',
+    };
+
+    // Determine which image to use
+    String imagePath = product.imageUrl;
+    if (!imagePath.startsWith('http')) {
+      // Try to find matching local image based on product name
+      final lowerName = product.name.toLowerCase();
+      for (final key in defaultImages.keys) {
+        if (lowerName.contains(key)) {
+          imagePath = defaultImages[key]!;
+          break;
+        }
+      }
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -34,7 +55,7 @@ class EggProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Gambar produk dengan badge diskon
+              // Product image with discount badge
               Expanded(
                 flex: 3,
                 child: Stack(
@@ -46,13 +67,14 @@ class EggProductCard extends StatelessWidget {
                           top: Radius.circular(16),
                         ),
                         image: DecorationImage(
-                          image: NetworkImage(product.imageUrl),
+                          image: imagePath.startsWith('http')
+                              ? NetworkImage(imagePath) as ImageProvider
+                              : AssetImage(imagePath),
                           fit: BoxFit.cover,
-                          onError: (exception, stackTrace) {},
                         ),
                         color: Colors.green.shade100,
                       ),
-                      child: product.imageUrl.isEmpty
+                      child: imagePath.isEmpty
                           ? Center(
                               child: Icon(
                                 Icons.egg_outlined,
@@ -80,7 +102,7 @@ class EggProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Diskon badge
+                    // Discount badge
                     if (product.isOnDiscount)
                       Positioned(
                         top: 8,
@@ -114,7 +136,7 @@ class EggProductCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Info produk
+              // Product info
               Expanded(
                 flex: 2,
                 child: Container(
@@ -128,7 +150,7 @@ class EggProductCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Nama produk
+                      // Product name
                       Text(
                         product.name,
                         style: TextStyle(
@@ -141,7 +163,7 @@ class EggProductCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
-                      // Harga
+                      // Price
                       Row(
                         children: [
                           if (product.isOnDiscount)
@@ -207,7 +229,7 @@ class EggProductCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      // Stok
+                      // Stock
                       Row(
                         children: [
                           const Icon(

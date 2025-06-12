@@ -206,7 +206,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                             borderRadius: BorderRadius.circular(28),
                             child: AspectRatio(
                               aspectRatio: 16 / 9,
-                              child: Image.network(
+                              child: Image.asset(
                                 product.imageUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>

@@ -121,7 +121,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Gabung untuk kelola peternakan unggas Anda',
+                        'Buat Akun Mu Untuk Gabung Bersama Kami',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.green.shade600,

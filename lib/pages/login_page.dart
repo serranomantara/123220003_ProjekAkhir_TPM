@@ -110,7 +110,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Agro Login',
+                        'Relasi Telur',
                         style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(
                               fontWeight: FontWeight.bold,
@@ -120,7 +120,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Masuk untuk kelola pertanianmu',
+                        'Pesan Telur dari Kami',
                         style: TextStyle(
                           color: Colors.green.shade600,
                           fontSize: 16,
