@@ -401,7 +401,7 @@ class _OrderPageState extends State<OrderPage> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Pesanan dibuat di zona waktu: ${order.timezone}',
+                          'Pesanan akan dikirim ke daerah: ${order.timezone}',
                           style: TextStyle(
                             color: Colors.orange.shade700,
                             fontSize: 12,

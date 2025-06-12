@@ -17,39 +17,83 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  List<EggProduct> allEggProducts = []; // Store all products
-  List<EggProduct> filteredEggProducts = []; // Store filtered products
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+  List<EggProduct> eggProducts = [];
   bool isLoading = true;
   String? error;
   int _currentIndex = 0;
   String? userName;
 
-  // Filter variables
-  String? selectedCategory;
-  String? selectedFarm;
-  double? minPrice;
-  double? maxPrice;
+  // Scroll controllers untuk smooth scrolling
+  late ScrollController _scrollController;
+  bool _showScrollToTopButton = false;
 
-  final List<String> categories = [
-    'Ayam Biasa',
-    'Ayam Organik',
-    'Bebek',
-    'Puyuh',
-    'Lainnya',
-  ];
-  final List<String> farms = [
-    'Semua Peternakan',
-    'Peternakan Jaya Abadi',
-    'Peternakan Sejahtera',
-    'Peternakan Bebek Bahagia',
-  ];
+  // Animation controller untuk scroll button
+  late AnimationController _scrollButtonAnimationController;
+  late Animation<double> _scrollButtonAnimation;
 
   @override
   void initState() {
     super.initState();
     loadEggProducts();
     loadUserName();
+    _initializeAnimations();
+    _setupScrollController();
+  }
+
+  void _initializeAnimations() {
+    // Animation controller untuk scroll to top button
+    _scrollButtonAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    // Scroll button animation dengan bounce effect
+    _scrollButtonAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _scrollButtonAnimationController,
+        curve: Curves.elasticOut,
+      ),
+    );
+  }
+
+  void _setupScrollController() {
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _scrollButtonAnimationController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    const double scrollToTopThreshold = 200.0;
+    final double offset = _scrollController.offset;
+
+    // Handle scroll to top button visibility
+    if (offset > scrollToTopThreshold && !_showScrollToTopButton) {
+      setState(() {
+        _showScrollToTopButton = true;
+      });
+      _scrollButtonAnimationController.forward();
+    } else if (offset <= scrollToTopThreshold && _showScrollToTopButton) {
+      setState(() {
+        _showScrollToTopButton = false;
+      });
+      _scrollButtonAnimationController.reverse();
+    }
+  }
+
+  // Smooth scroll to top function
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   Future<void> loadUserName() async {
@@ -68,61 +112,20 @@ class _HomePageState extends State<HomePage> {
 
       final productList = await EggStoreApi().fetchProducts();
 
-      // Map the products to include local assets
       final mappedProducts = productList.map((product) {
-        return product.copyWith(
-          imageUrl: product.assetImage, // Use the assetImage getter
-        );
+        return product.copyWith(imageUrl: product.assetImage);
       }).toList();
 
       setState(() {
-        allEggProducts = mappedProducts;
+        eggProducts = mappedProducts;
         isLoading = false;
       });
-      
-      // Apply filters after loading products
-      applyFilters();
     } catch (e) {
       setState(() {
         error = e.toString();
         isLoading = false;
       });
     }
-  }
-
-  void applyFilters() {
-    List<EggProduct> filtered = List.from(allEggProducts);
-
-    // Apply category filter
-    if (selectedCategory != null && selectedCategory!.isNotEmpty) {
-      filtered = filtered.where((product) {
-        return product.category.toLowerCase() == selectedCategory!.toLowerCase();
-      }).toList();
-    }
-
-    // Apply farm filter - FIX: menggunakan farmOrigin bukan farm
-    if (selectedFarm != null && selectedFarm!.isNotEmpty) {
-      filtered = filtered.where((product) {
-        return product.farmOrigin.toLowerCase().contains(selectedFarm!.toLowerCase());
-      }).toList();
-    }
-
-    // Apply price range filter
-    if (minPrice != null) {
-      filtered = filtered.where((product) {
-        return product.discountedPrice >= minPrice!;
-      }).toList();
-    }
-
-    if (maxPrice != null) {
-      filtered = filtered.where((product) {
-        return product.discountedPrice <= maxPrice!;
-      }).toList();
-    }
-
-    setState(() {
-      filteredEggProducts = filtered;
-    });
   }
 
   void _onBottomNavTap(int index) {
@@ -132,10 +135,8 @@ class _HomePageState extends State<HomePage> {
 
     switch (index) {
       case 0:
-        // Home - already on this page
         break;
       case 1:
-        // Keranjang
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const CartPage()),
@@ -146,7 +147,6 @@ class _HomePageState extends State<HomePage> {
         });
         break;
       case 2:
-        // Pesanan
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -162,7 +162,6 @@ class _HomePageState extends State<HomePage> {
         });
         break;
       case 3:
-        // Kesan Pesan
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const KesanPesanPage()),
@@ -188,8 +187,8 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.egg_rounded, // Menggunakan icon yang sama dengan login
+              child: const Icon(
+                Icons.egg_rounded,
                 color: Colors.white,
                 size: 24,
               ),
@@ -209,13 +208,12 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.green.shade800.withOpacity(0.95),
         foregroundColor: Colors.white,
         actions: [
-          // User Info Button
           GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const UserPage()),
-              ).then((_) => loadUserName()); // Refresh user name when back
+              ).then((_) => loadUserName());
             },
             child: Container(
               margin: const EdgeInsets.only(right: 12),
@@ -230,7 +228,11 @@ class _HomePageState extends State<HomePage> {
                   CircleAvatar(
                     radius: 12,
                     backgroundColor: Colors.white.withOpacity(0.3),
-                    child: Icon(Icons.person, size: 16, color: Colors.white),
+                    child: const Icon(
+                      Icons.person,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -245,7 +247,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // Logout Button
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
@@ -279,10 +280,10 @@ class _HomePageState extends State<HomePage> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF2E7D32), // Hijau gelap (Green-800)
-              Color(0xFF4CAF50), // Hijau sedang (Green-600)
-              Color(0xFF81C784), // Hijau muda (Green-300)
-              Color(0xFFE8F5E9), // Hijau sangat muda (Green-50)
+              Color(0xFF2E7D32),
+              Color(0xFF4CAF50),
+              Color(0xFF81C784),
+              Color(0xFFE8F5E9),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -290,15 +291,41 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: loadEggProducts,
-            color: Colors.green.shade600,
-            backgroundColor: Colors.white,
-            child: _buildBody(),
+          child: Stack(
+            children: [
+              // Main Content
+              RefreshIndicator(
+                onRefresh: loadEggProducts,
+                color: Colors.green.shade600,
+                backgroundColor: Colors.white,
+                strokeWidth: 3.0,
+                displacement: 50.0,
+                child: _buildContent(),
+              ),
+
+              // Smooth Scroll to Top Button
+              if (_showScrollToTopButton)
+                Positioned(
+                  right: 16,
+                  bottom: 100,
+                  child: ScaleTransition(
+                    scale: _scrollButtonAnimation,
+                    child: FloatingActionButton(
+                      onPressed: _scrollToTop,
+                      backgroundColor: Colors.green.shade600,
+                      elevation: 8,
+                      child: const Icon(
+                        Icons.keyboard_arrow_up,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
-      // In the bottomNavigationBar section of your home_page.dart
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -349,322 +376,6 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildBody() {
-    return Column(
-      children: [
-        // Header Section
-        Container(
-          margin: const EdgeInsets.all(16),
-          child: Card(
-            elevation: 12,
-            shadowColor: Colors.green.withOpacity(0.3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                gradient: LinearGradient(
-                  colors: [Colors.white, Colors.green.shade50],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade100,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(
-                            Icons.egg_rounded,
-                            size: 32,
-                            color: Colors.green.shade700,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Telur Segar',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green.shade800,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Pilih telur segar langsung dari peternakan',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.green.shade600,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Filter Section
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.green.shade300),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                hint: Text(
-                                  'Semua Kategori',
-                                  style: TextStyle(
-                                    color: Colors.green.shade700,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                value: selectedCategory,
-                                isExpanded: true,
-                                icon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: Colors.green.shade600,
-                                ),
-                                dropdownColor: Colors.white,
-                                items: [
-                                  DropdownMenuItem<String>(
-                                    value: null,
-                                    child: Text(
-                                      'Semua Kategori',
-                                      style: TextStyle(
-                                        color: Colors.green.shade700,
-                                      ),
-                                    ),
-                                  ),
-                                  ...categories.map((String category) {
-                                    return DropdownMenuItem<String>(
-                                      value: category,
-                                      child: Text(
-                                        category,
-                                        style: TextStyle(
-                                          color: Colors.green.shade700,
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedCategory = value;
-                                  });
-                                  applyFilters(); // Apply filters when category changes
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.green.shade300),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                hint: Text(
-                                  'Semua Peternakan',
-                                  style: TextStyle(
-                                    color: Colors.green.shade700,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                value: selectedFarm,
-                                isExpanded: true,
-                                icon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: Colors.green.shade600,
-                                ),
-                                dropdownColor: Colors.white,
-                                items: farms.map((String farm) {
-                                  return DropdownMenuItem<String>(
-                                    value: farm == 'Semua Peternakan'
-                                        ? null
-                                        : farm,
-                                    child: Text(
-                                      farm,
-                                      style: TextStyle(
-                                        color: Colors.green.shade700,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedFarm = value;
-                                  });
-                                  applyFilters(); // Apply filters when farm changes
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Add price filter section
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.green.shade300),
-                            ),
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Harga Min',
-                                hintStyle: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontSize: 14,
-                                ),
-                                border: InputBorder.none,
-                                prefixText: 'Rp ',
-                                prefixStyle: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              keyboardType: TextInputType.number,
-                              style: TextStyle(
-                                color: Colors.green.shade700,
-                                fontSize: 14,
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  minPrice = double.tryParse(value);
-                                });
-                                applyFilters();
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.green.shade300),
-                            ),
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Harga Max',
-                                hintStyle: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontSize: 14,
-                                ),
-                                border: InputBorder.none,
-                                prefixText: 'Rp ',
-                                prefixStyle: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              keyboardType: TextInputType.number,
-                              style: TextStyle(
-                                color: Colors.green.shade700,
-                                fontSize: 14,
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  maxPrice = double.tryParse(value);
-                                });
-                                applyFilters();
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Clear filters button
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            selectedCategory = null;
-                            selectedFarm = null;
-                            minPrice = null;
-                            maxPrice = null;
-                          });
-                          applyFilters();
-                        },
-                        icon: const Icon(Icons.clear_all, color: Colors.white, size: 18),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade600,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 4,
-                          shadowColor: Colors.green.withOpacity(0.4),
-                        ),
-                        label: const Text(
-                          'Hapus Filter',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // Content Section
-        Expanded(child: _buildContent()),
-      ],
     );
   }
 
@@ -781,7 +492,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    if (filteredEggProducts.isEmpty) {
+    if (eggProducts.isEmpty) {
       return Center(
         child: Container(
           margin: const EdgeInsets.all(24),
@@ -829,7 +540,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Silakan coba filter lain atau cek kembali nanti',
+                      'Silakan cek kembali nanti',
                       style: TextStyle(
                         color: Colors.green.shade600,
                         fontSize: 14,
@@ -846,18 +557,20 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       child: GridView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.only(bottom: 16),
+        physics: const BouncingScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.7,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
         ),
-        itemCount: filteredEggProducts.length,
+        itemCount: eggProducts.length,
         itemBuilder: (context, index) {
-          final product = filteredEggProducts[index];
+          final product = eggProducts[index];
           return EggProductCard(
             product: product,
             onTap: () {
