@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/egg_product.dart';
 import '../services/cart_service.dart';
 import '../pages/cart_page.dart';
@@ -39,8 +40,86 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
     'WIB': 'Waktu Indonesia Barat (WIB)',
     'WITA': 'Waktu Indonesia Tengah (WITA)',
     'WIT': 'Waktu Indonesia Timur (WIT)',
+    'US': 'United States (US)',
+    'GERMANY': 'Germany (DE)',
     'London': 'London Time (GMT)',
   };
+
+  // Data lokasi toko di Jogja
+  List<Map<String, dynamic>> get storeLocations {
+    // Return only stores that carry this specific product
+    switch (widget.product.id) {
+      case 1: // Product ID 1
+        return [
+          {
+            'name': 'Toko Telur Seturan',
+            'address': 'Jl. Seturan Raya No. 5, Depok, Sleman',
+            'lat': -7.7619,
+            'lng': 110.4081,
+            'phone': '081234567890',
+            'hours': '08:00 - 20:00 (Setiap Hari)',
+          },
+          {
+            'name': 'Toko Telur Condongcatur',
+            'address': 'Jl. Ringroad Utara No. 12, Condongcatur, Sleman',
+            'lat': -7.7478,
+            'lng': 110.4029,
+            'phone': '081234567891',
+            'hours': '07:30 - 19:30 (Setiap Hari)',
+          },
+        ];
+      case 2: // Product ID 2
+        return [
+          {
+            'name': 'Toko Telur Babarsari',
+            'address': 'Jl. Babarsari No. 8, Caturtunggal, Depok, Sleman',
+            'lat': -7.7714,
+            'lng': 110.4142,
+            'phone': '081234567892',
+            'hours': '08:00 - 21:00 (Setiap Hari)',
+          },
+        ];
+      case 3: // Product ID 3
+        return [
+          {
+            'name': 'Toko Telur Demangan',
+            'address': 'Jl. Demangan Baru No. 15, Gondokusuman, Yogyakarta',
+            'lat': -7.7825,
+            'lng': 110.3858,
+            'phone': '081234567893',
+            'hours': '09:00 - 20:00 (Senin-Sabtu)',
+          },
+          {
+            'name': 'Toko Telur Pujokusuman',
+            'address':
+                'Jl. Pujokusuman No. 3, Sorosutan, Umbulharjo, Yogyakarta',
+            'lat': -7.8156,
+            'lng': 110.3689,
+            'phone': '081234567894',
+            'hours': '08:30 - 19:30 (Setiap Hari)',
+          },
+          {
+            'name': 'Toko Telur Seturan',
+            'address': 'Jl. Seturan Raya No. 5, Depok, Sleman',
+            'lat': -7.7619,
+            'lng': 110.4081,
+            'phone': '081234567890',
+            'hours': '08:00 - 20:00 (Setiap Hari)',
+          },
+        ];
+      default: // Default case
+        return [
+          {
+            'name': 'Toko Telur Pusat',
+            'address': 'Jl. Solo No. 10, Yogyakarta',
+            'lat': -7.7828,
+            'lng': 110.3671,
+            'phone': '081234567895',
+            'hours': '08:00 - 21:00 (Setiap Hari)',
+          },
+        ];
+    }
+  }
 
   @override
   void initState() {
@@ -50,15 +129,32 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
     // Initialize with cart service values if they exist
     selectedTimezone = cartService.lockedTimezone ?? 'WIB';
 
-    // Handle currency initialization carefully
+    // Handle currency initialization based on timezone
     if (cartService.lockedCurrency != null) {
       selectedCurrency = cartService.lockedCurrency!;
     } else {
-      selectedCurrency = selectedTimezone == 'London' ? 'GBP' : 'IDR';
+      selectedCurrency = _getCurrencyForTimezone(selectedTimezone);
     }
 
-    // Store the previous currency (excluding GBP if not in London)
-    previousCurrency = selectedTimezone == 'London' ? 'IDR' : selectedCurrency;
+    // Store the previous currency (excluding locked currencies)
+    previousCurrency = selectedCurrency;
+  }
+
+  String _getCurrencyForTimezone(String timezone) {
+    switch (timezone) {
+      case 'WIB':
+      case 'WITA':
+      case 'WIT':
+        return 'IDR';
+      case 'US':
+        return 'USD';
+      case 'GERMANY':
+        return 'EUR';
+      case 'London':
+        return 'GBP';
+      default:
+        return 'IDR';
+    }
   }
 
   double convertPrice(double priceInIDR) {
@@ -99,6 +195,24 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
 
   int _getAvailableStock() {
     return widget.product.stock - _getItemsInCart();
+  }
+
+  Future<void> _launchMaps(double lat, double lng) async {
+    final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final url = 'tel:$phoneNumber';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 
   @override
@@ -403,6 +517,10 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                                     Icon(
                                                       entry.key == 'London'
                                                           ? Icons.location_city
+                                                          : entry.key == 'US' ||
+                                                                entry.key ==
+                                                                    'GERMANY'
+                                                          ? Icons.flag
                                                           : Icons.access_time,
                                                       size: 16,
                                                       color:
@@ -423,31 +541,24 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                               );
                                             }).toList(),
                                             onChanged: (value) {
-                                              setState(() {
-                                                if (selectedTimezone !=
-                                                    'London') {
-                                                  previousCurrency =
-                                                      selectedCurrency;
-                                                }
-
-                                                selectedTimezone = value!;
-
-                                                if (value == 'London') {
-                                                  selectedCurrency = 'GBP';
-                                                } else {
-                                                  selectedCurrency =
-                                                      previousCurrency ?? 'IDR';
-                                                  if (![
-                                                    'IDR',
-                                                    'USD',
-                                                    'EUR',
-                                                  ].contains(
-                                                    selectedCurrency,
-                                                  )) {
-                                                    selectedCurrency = 'IDR';
+                                              if (value != null) {
+                                                setState(() {
+                                                  // Store previous currency only if not in cart
+                                                  if (cartService
+                                                      .cartItems
+                                                      .isEmpty) {
+                                                    previousCurrency =
+                                                        selectedCurrency;
                                                   }
-                                                }
-                                              });
+
+                                                  selectedTimezone = value;
+                                                  // Automatically set currency based on timezone
+                                                  selectedCurrency =
+                                                      _getCurrencyForTimezone(
+                                                        value,
+                                                      );
+                                                });
+                                              }
                                             },
                                           ),
                                         ),
@@ -457,7 +568,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
 
                                   const SizedBox(height: 16),
 
-                                  if (selectedTimezone != 'London') ...[
+                                  if (cartService.cartItems.isEmpty) ...[
                                     Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -489,105 +600,69 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 16,
                                                   ),
-                                              items: ['IDR', 'USD', 'EUR'].map((
-                                                currency,
-                                              ) {
-                                                bool isLockedCurrency =
-                                                    cartService
-                                                        .lockedCurrency ==
-                                                    currency;
-                                                bool isSelected =
-                                                    selectedCurrency ==
-                                                    currency;
-                                                bool isAllowed =
-                                                    cartService
-                                                        .cartItems
-                                                        .isEmpty ||
-                                                    isLockedCurrency ||
-                                                    isSelected;
-
-                                                return DropdownMenuItem(
-                                                  value: currency,
-                                                  enabled: isAllowed,
-                                                  child: Row(
-                                                    children: [
-                                                      Text(
-                                                        currencySymbols[currency]!,
-                                                        style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Colors
-                                                              .blue
-                                                              .shade600,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        currency,
-                                                        style: TextStyle(
-                                                          color: isAllowed
-                                                              ? Colors
-                                                                    .blue
-                                                                    .shade800
-                                                              : Colors.grey,
-                                                          fontSize: 14,
-                                                        ),
-                                                      ),
-                                                      if (cartService
-                                                              .cartItems
-                                                              .isNotEmpty &&
-                                                          !isLockedCurrency &&
-                                                          !isSelected)
-                                                        const Padding(
-                                                          padding:
-                                                              EdgeInsets.only(
-                                                                left: 8,
-                                                              ),
-                                                          child: Icon(
-                                                            Icons.lock,
-                                                            size: 14,
-                                                            color: Colors.grey,
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  ),
-                                                );
-                                              }).toList(),
-                                              onChanged: (value) {
-                                                if (value != null) {
-                                                  if (cartService
-                                                          .cartItems
-                                                          .isEmpty ||
-                                                      value ==
-                                                          cartService
-                                                              .lockedCurrency) {
-                                                    setState(() {
-                                                      selectedCurrency = value;
-                                                      previousCurrency = value;
-                                                    });
-                                                  } else {
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          'Mata uang sudah dipilih sebagai ${cartService.lockedCurrency}. '
-                                                          'Tidak bisa mengubah mata uang setelah ada item di keranjang.',
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                              ),
-                                                        ),
-                                                        backgroundColor:
-                                                            Colors.red.shade600,
-                                                        duration:
-                                                            const Duration(
-                                                              seconds: 3,
+                                              items: ['IDR', 'USD', 'EUR', 'GBP']
+                                                  .where((currency) {
+                                                    // Only show currencies that match the timezone
+                                                    switch (selectedTimezone) {
+                                                      case 'WIB':
+                                                      case 'WITA':
+                                                      case 'WIT':
+                                                        return currency ==
+                                                            'IDR';
+                                                      case 'US':
+                                                        return currency ==
+                                                            'USD';
+                                                      case 'GERMANY':
+                                                        return currency ==
+                                                            'EUR';
+                                                      case 'London':
+                                                        return currency ==
+                                                            'GBP';
+                                                      default:
+                                                        return true;
+                                                    }
+                                                  })
+                                                  .map((currency) {
+                                                    return DropdownMenuItem(
+                                                      value: currency,
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            currencySymbols[currency]!,
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: Colors
+                                                                  .blue
+                                                                  .shade600,
                                                             ),
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 8,
+                                                          ),
+                                                          Text(
+                                                            currency,
+                                                            style: TextStyle(
+                                                              color: Colors
+                                                                  .blue
+                                                                  .shade800,
+                                                              fontSize: 14,
+                                                            ),
+                                                          ),
+                                                        ],
                                                       ),
                                                     );
-                                                  }
+                                                  })
+                                                  .toList(),
+                                              onChanged: (value) {
+                                                if (value != null &&
+                                                    cartService
+                                                        .cartItems
+                                                        .isEmpty) {
+                                                  setState(() {
+                                                    selectedCurrency = value;
+                                                  });
                                                 }
                                               },
                                             ),
@@ -615,7 +690,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              'Untuk pengiriman ke London, mata uang otomatis dikonversi ke GBP (£)',
+                                              'Mata uang terkunci ke $selectedCurrency karena ada item di keranjang',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.orange.shade700,
@@ -782,6 +857,46 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                               'Organik',
                               product.isOrganic ? 'Ya' : 'Tidak',
                             ),
+
+                            const SizedBox(height: 24),
+
+                            // Bagian untuk menampilkan lokasi toko yang menjual produk ini
+                            Text(
+                              'Lokasi Toko Offline',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green.shade800,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Anda dapat membeli produk ini langsung di toko kami di daerah Jogja:',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            if (storeLocations.isNotEmpty)
+                              ...storeLocations
+                                  .map((store) => _buildStoreCard(store))
+                                  .toList()
+                            else
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  'Produk ini saat ini tidak tersedia di toko offline',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
 
                             const SizedBox(height: 32),
 
@@ -1058,6 +1173,142 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoreCard(Map<String, dynamic> store) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+            child: Image.asset(
+              'assets/store_placeholder.jpg', // Ganti dengan gambar toko jika ada
+              height: 120,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 120,
+                color: Colors.grey.shade200,
+                child: Center(
+                  child: Icon(
+                    Icons.store,
+                    size: 40,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  store['name'],
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      size: 16,
+                      color: Colors.grey.shade600,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        store['address'],
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 16,
+                      color: Colors.grey.shade600,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      store['hours'],
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.map, size: 16),
+                        label: const Text('Buka di Maps'),
+                        onPressed: () =>
+                            _launchMaps(store['lat'], store['lng']),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.green.shade700,
+                          side: BorderSide(color: Colors.green.shade400),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.phone, size: 16),
+                        label: const Text('Hubungi'),
+                        onPressed: () => _makePhoneCall(store['phone']),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.blue.shade700,
+                          side: BorderSide(color: Colors.blue.shade400),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
