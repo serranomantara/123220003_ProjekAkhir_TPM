@@ -34,7 +34,6 @@ class Order {
     required this.items,
   });
 
-  // Convert Order to Map for database
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -53,7 +52,6 @@ class Order {
     };
   }
 
-  // Create Order from Map (from database)
   factory Order.fromMap(Map<String, dynamic> map) {
     return Order(
       id: map['id'] as String,
@@ -75,7 +73,6 @@ class Order {
     );
   }
 
-  // Helper method to create an order from cart items
   factory Order.fromCartItems({
     required String userId,
     required List<CartItem> cartItems,
@@ -142,7 +139,6 @@ class OrderItem {
     required this.subtotal,
   });
 
-  // Convert OrderItem to Map for database
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -155,7 +151,6 @@ class OrderItem {
     };
   }
 
-  // Create OrderItem from Map (from database)
   factory OrderItem.fromMap(Map<String, dynamic> map) {
     return OrderItem(
       id: map['id'] as String,
@@ -168,7 +163,6 @@ class OrderItem {
     );
   }
 
-  // Create OrderItem from CartItem
   factory OrderItem.fromCartItem(CartItem cartItem, String orderId) {
     return OrderItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -219,7 +213,6 @@ class CartItem {
     required this.updatedAt,
   });
 
-  // Convert CartItem to Map for database
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -232,7 +225,6 @@ class CartItem {
     };
   }
 
-  // Create CartItem from Map (from database)
   factory CartItem.fromMap(Map<String, dynamic> map, EggProduct product) {
     return CartItem(
       id: map['id'] as String,

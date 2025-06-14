@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-/// Model untuk produk telur
 class EggProduct {
   final String id;
   final String name;
@@ -9,16 +8,16 @@ class EggProduct {
   final int stock;
   final String imageUrl;
   final String category;
-  final double? weight; // dalam gram (opsional)
+  final double? weight; 
   final DateTime? harvestDate;
   final String farmOrigin;
   final bool isOrganic;
-  final double? discount; // diskon dalam persen (0-100)
-  final double? rating; // rating 1-5 (opsional)
+  final double? discount; 
+  final double? rating; 
   final int? reviewCount;
   final DateTime? createdAt;
   final DateTime? updatedAt;
-  final String? assetImagePath; // Path ke gambar asset lokal
+  final String? assetImagePath; 
 
   EggProduct({
     required this.id,
@@ -40,35 +39,27 @@ class EggProduct {
     this.assetImagePath,
   });
 
-  /// Getter untuk asset image
   String? get assetImage => assetImagePath;
 
-  /// Getter untuk menentukan gambar yang akan ditampilkan (prioritaskan asset)
   String get displayImage => assetImage ?? imageUrl;
 
-  /// Harga setelah diskon
   double get discountedPrice {
     if (discount == null || discount == 0) return price;
     return price * (1 - discount! / 100);
   }
 
-  /// Apakah produk sedang diskon
   bool get isOnDiscount => discount != null && discount! > 0;
 
-  /// Apakah stok hampir habis
   bool get isLowStock => stock < 10;
 
-  /// Format harga sebagai string Rupiah
   String get formattedPrice {
     return 'Rp ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
-  /// Format harga diskon sebagai string Rupiah
   String get formattedDiscountedPrice {
     return 'Rp ${discountedPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
-  /// Konversi dari JSON (untuk API)
   factory EggProduct.fromJson(Map<String, dynamic> json) {
     return EggProduct(
       id: json['id'] as String,
@@ -96,7 +87,6 @@ class EggProduct {
     );
   }
 
-  /// Konversi ke JSON (untuk API)
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -118,7 +108,6 @@ class EggProduct {
     };
   }
 
-  /// Konversi ke Map untuk SQLite Database
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -142,7 +131,6 @@ class EggProduct {
     };
   }
 
-  /// Konversi dari Map SQLite Database
   factory EggProduct.fromMap(Map<String, dynamic> map) {
     return EggProduct(
       id: map['id'] as String,
@@ -170,7 +158,6 @@ class EggProduct {
     );
   }
 
-  /// Copy dengan perubahan
   EggProduct copyWith({
     String? id,
     String? name,
@@ -211,12 +198,10 @@ class EggProduct {
     );
   }
 
-  /// Update stock produk
   EggProduct updateStock(int newStock) {
     return copyWith(stock: newStock, updatedAt: DateTime.now());
   }
 
-  /// Kurangi stock (untuk transaksi)
   EggProduct reduceStock(int quantity) {
     final newStock = stock - quantity;
     if (newStock < 0) {
@@ -227,12 +212,10 @@ class EggProduct {
     return copyWith(stock: newStock, updatedAt: DateTime.now());
   }
 
-  /// Tambah stock (untuk restock)
   EggProduct addStock(int quantity) {
     return copyWith(stock: stock + quantity, updatedAt: DateTime.now());
   }
 
-  /// Update rating berdasarkan review baru
   EggProduct updateRating(double newRating) {
     final currentReviewCount = reviewCount ?? 0;
     final currentRating = rating ?? 0.0;
@@ -248,7 +231,6 @@ class EggProduct {
     );
   }
 
-  /// Validasi data produk
   bool get isValid {
     return id.isNotEmpty &&
         name.isNotEmpty &&
@@ -260,7 +242,6 @@ class EggProduct {
         farmOrigin.isNotEmpty;
   }
 
-  /// List validasi error
   List<String> get validationErrors {
     List<String> errors = [];
 
@@ -304,7 +285,6 @@ class EggProduct {
   int get hashCode => Object.hash(id, name, price);
 }
 
-/// Enum untuk kategori produk telur
 enum EggCategory {
   chickenRegular('regular', 'Ayam Biasa'),
   chickenPremium('premium', 'Ayam Premium'),
@@ -325,7 +305,6 @@ enum EggCategory {
   }
 }
 
-/// Enum untuk status stock
 enum StockStatus {
   available('Tersedia'),
   lowStock('Stok Terbatas'),
@@ -341,27 +320,21 @@ enum StockStatus {
   }
 }
 
-/// Extension untuk EggProduct
 extension EggProductExtension on EggProduct {
-  /// Status stock produk
   StockStatus get stockStatus => StockStatus.fromStock(stock);
 
-  /// Apakah produk baru (dibuat dalam 7 hari terakhir)
   bool get isNew {
     if (createdAt == null) return false;
     return DateTime.now().difference(createdAt!).inDays <= 7;
   }
 
-  /// Usia produk dalam hari
   int get ageInDays {
     if (harvestDate == null) return 0;
     return DateTime.now().difference(harvestDate!).inDays;
   }
 
-  /// Apakah produk masih fresh (kurang dari 7 hari)
   bool get isFresh => ageInDays <= 7;
 
-  /// Tingkat kesegaran (Fresh, Good, Old)
   String get freshnessLevel {
     if (ageInDays <= 3) return 'Sangat Segar';
     if (ageInDays <= 7) return 'Segar';
@@ -370,7 +343,6 @@ extension EggProductExtension on EggProduct {
   }
 }
 
-/// Dummy data untuk pengujian / pengembangan
 List<EggProduct> dummyEggProducts = [
   EggProduct(
     id: '1',

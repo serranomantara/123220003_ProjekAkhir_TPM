@@ -21,10 +21,8 @@ class CartItem {
     this.updatedAt,
   });
 
-  // Hitung subtotal
   double get subtotal => price * quantity;
 
-  // Konversi ke Map untuk database
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -38,7 +36,6 @@ class CartItem {
     };
   }
 
-  // Buat CartItem dari Map
   factory CartItem.fromMap(Map<String, dynamic> map) {
     return CartItem(
       id: map['id'] ?? '',
@@ -56,7 +53,6 @@ class CartItem {
     );
   }
 
-  // Salin dengan perubahan
   CartItem copyWith({
     String? id,
     String? userId,

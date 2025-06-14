@@ -19,7 +19,6 @@ class EggStoreApi {
     String? searchQuery,
   }) async {
     try {
-      // Build query parameters
       final params = <String, String>{};
       if (category != null) params['category'] = category;
       if (farmOrigin != null) params['farmOrigin'] = farmOrigin;
@@ -55,16 +54,7 @@ class EggStoreApi {
   Future<EggProduct> getProductDetail(String productId) async {
     try {
       await Future.delayed(const Duration(milliseconds: 300));
-
-      // In a real app:
-      // final response = await _client.get(Uri.parse('$_baseUrl/products/$productId'));
-      // if (response.statusCode == 200) {
-      //   return EggProduct.fromJson(json.decode(response.body));
-      // } else {
-      //   throw Exception('Failed to load product details');
-      // }
-
-      // Mock implementation
+      
       final product = _mockProducts.firstWhere(
         (p) => p.id == productId,
         orElse: () => throw Exception('Product not found'),

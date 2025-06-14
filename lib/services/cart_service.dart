@@ -4,14 +4,13 @@ import '../models/egg_product.dart';
 
 class CurrencyHelper {
   static String formatPrice(double price, String currency) {
-    // Handle potential NaN or infinity
     if (price.isNaN || price.isInfinite) {
       if (kDebugMode) {
         print(
           'Warning: Attempting to format NaN/Infinity price: $price for $currency',
         );
       }
-      return 'N/A'; // Or some other appropriate error indicator
+      return 'N/A'; 
     }
 
     final format = NumberFormat.currency(
@@ -39,16 +38,13 @@ class CurrencyHelper {
 class CartItem {
   final EggProduct product;
   int quantity;
-  final String currency; // The currency this item's price is stored in
+  final String currency; 
   final String timezone;
 
-  // totalPrice is now calculated dynamically, assuming product.discountedPrice is in IDR
   double get totalPrice {
-    // If currency is IDR, no conversion needed for product price
     if (currency == 'IDR') {
       return product.discountedPrice * quantity;
     } else {
-      // Convert product.discountedPrice (assumed IDR) to this CartItem's currency
       return CartService.convertPriceStatic(
             product.discountedPrice,
             'IDR',
@@ -92,27 +88,23 @@ class CartService extends ChangeNotifier {
   String? get lockedCurrency => _lockedCurrency;
   String? get lockedTimezone => _lockedTimezone;
 
-  // Exchange rates: How many units of OTHER currency equals 1 IDR.
-  // This makes IDR our explicit pivot.
   static const Map<String, double> _exchangeRates = {
-    'IDR': 1.0, // 1 IDR = 1 IDR
-    'USD': 0.000067, // 1 IDR = 0.000067 USD (approx. 1 USD = 15000 IDR)
-    'EUR': 0.000061, // 1 IDR = 0.000061 EUR (approx. 1 EUR = 16500 IDR)
-    'GBP': 0.000053, // 1 IDR = 0.000053 GBP (approx. 1 GBP = 19000 IDR)
+    'IDR': 1.0, 
+    'USD': 0.000067, 
+    'EUR': 0.000061, 
+    'GBP': 0.000053, 
   };
 
-  // Static method for currency conversion, accessible by CartItem and OrderPage
   static double convertPriceStatic(
     double price,
     String sourceCurrency,
     String targetCurrency,
   ) {
     if (sourceCurrency == targetCurrency) {
-      return price; // No conversion needed if currencies are the same
+      return price; 
     }
 
     double priceInIDR;
-    // Step 1: Convert the price from sourceCurrency to IDR
     if (sourceCurrency == 'IDR') {
       priceInIDR = price;
     } else {
@@ -121,13 +113,11 @@ class CartService extends ChangeNotifier {
         if (kDebugMode) {
           print('Error: Exchange rate for $sourceCurrency is 0 or not found.');
         }
-        return 0.0; // Prevent division by zero or invalid calculation
+        return 0.0; 
       }
-      // If 1 IDR = X USD, then 1 USD = 1/X IDR
       priceInIDR = price / sourceRate;
     }
 
-    // Step 2: Convert the price from IDR to targetCurrency
     if (targetCurrency == 'IDR') {
       return priceInIDR;
     } else {
@@ -136,9 +126,8 @@ class CartService extends ChangeNotifier {
         if (kDebugMode) {
           print('Error: Exchange rate for $targetCurrency is 0 or not found.');
         }
-        return 0.0; // Prevent division by zero or invalid calculation
+        return 0.0; 
       }
-      // If 1 IDR = Y USD, then price in IDR * Y = price in USD
       return priceInIDR * targetRate;
     }
   }
@@ -146,7 +135,7 @@ class CartService extends ChangeNotifier {
   void addToCartWithQuantity(
     EggProduct product,
     int quantity,
-    String currency, // The currency selected by the user for the cart
+    String currency, 
     String timezone,
   ) {
     if (quantity <= 0) {
@@ -172,7 +161,6 @@ class CartService extends ChangeNotifier {
       }
     }
 
-    // Before adding/updating, check stock
     final existingQuantityInCart = _cartItems
         .where((item) => item.product.id == product.id)
         .fold(0, (sum, item) => sum + item.quantity);
@@ -200,7 +188,7 @@ class CartService extends ChangeNotifier {
         CartItem(
           product: product,
           quantity: quantity,
-          currency: currency, // This currency will dictate CartItem.totalPrice
+          currency: currency, 
           timezone: timezone,
         ),
       );
@@ -221,7 +209,7 @@ class CartService extends ChangeNotifier {
             .where((item) => item.product.id == product.id)
             .fold(0, (sum, item) => sum + item.quantity) -
         _cartItems[index]
-            .quantity; // Exclude current item's quantity from existing
+            .quantity; 
 
     if (existingQuantity + newQuantity > product.stock) {
       throw CartException(
@@ -280,31 +268,25 @@ class CartService extends ChangeNotifier {
     final now = DateTime.now();
     final firstItem = items.first;
 
-    // totalPrice in Order is already in the _lockedCurrency due to CartItem.totalPrice logic
     _orders.add(
       Order(
         items: List.from(items),
         checkoutTime: now,
         totalPrice: items.fold(0, (sum, item) => sum + item.totalPrice),
-        currency: firstItem.currency, // This is the _lockedCurrency of the cart
+        currency: firstItem.currency, 
         timezone: firstItem.timezone,
       ),
     );
   }
 
-  // This will return total price in the _lockedCurrency of the cart
   double getTotalPrice() {
     return _cartItems.fold(0, (sum, item) => sum + item.totalPrice);
   }
 
   String getFormattedTotalPrice() {
     if (_cartItems.isEmpty) {
-      // If cart is empty, return 0 formatted in the currently selected app currency (if any)
-      // or default to IDR if no currency was ever locked.
-      // This ensures we always return a string.
       return CurrencyHelper.formatPrice(0, _lockedCurrency ?? 'IDR');
     }
-    // Return total price in the _lockedCurrency of the cart
     return CurrencyHelper.formatPrice(
       getTotalPrice(),
       _cartItems.first.currency,
@@ -313,10 +295,8 @@ class CartService extends ChangeNotifier {
 
   String getFormattedPrice(double price) {
     if (_cartItems.isEmpty) {
-      // Similar to getFormattedTotalPrice, provide a default if cart is empty
       return CurrencyHelper.formatPrice(price, _lockedCurrency ?? 'IDR');
     }
-    // Format the given price using the _lockedCurrency of the cart
     return CurrencyHelper.formatPrice(price, _cartItems.first.currency);
   }
 

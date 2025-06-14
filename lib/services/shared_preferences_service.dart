@@ -3,12 +3,10 @@ import '../models/egg_product.dart';
 import 'dart:convert';
 
 class SharedPreferencesService {
-  // Keys
   static const String _keyUsername = 'username';
   static const String _keyIsLoggedIn = 'isLoggedIn';
   static const String _keyFavorites = 'favorites';
 
-  // Auth Functions
   Future<void> saveLoginData(String username) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyUsername, username);
@@ -31,7 +29,6 @@ class SharedPreferencesService {
     await prefs.setBool(_keyIsLoggedIn, false);
   }
 
-  // Favorite Functions
   Future<void> addFavorite(EggProduct product) async {
     final prefs = await SharedPreferences.getInstance();
     final favorites = await getFavorites();

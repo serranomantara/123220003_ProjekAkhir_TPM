@@ -26,7 +26,6 @@ class User {
     this.updatedAt,
   });
 
-  // Convert User object to Map for database operations
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -42,7 +41,6 @@ class User {
     };
   }
 
-  // Convert Map from database to User object
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
       id: map['id'] as String,
@@ -62,7 +60,6 @@ class User {
     );
   }
 
-  // Convert User object to JSON for SharedPreferences
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -74,13 +71,11 @@ class User {
     };
   }
 
-  // Convert JSON from SharedPreferences to User object
-  // Note: This won't include password for security reasons
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'] as String,
       email: json['email'] as String,
-      password: '', // Password shouldn't be stored in SharedPreferences
+      password: '', 
       name: json['name'] as String,
       phone: json['phone'] as String?,
       address: json['address'] as String?,
@@ -88,7 +83,6 @@ class User {
     );
   }
 
-  // Helper method to create a copy with updated values
   User copyWith({
     String? id,
     String? email,

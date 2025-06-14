@@ -6,7 +6,6 @@ class EggStoreApi {
   static const String baseUrl =
       'https://681388b3129f6313e2119693.mockapi.io/api/v1';
 
-  // Mendapatkan daftar produk telur
   Future<List<EggProduct>> fetchProducts({
     String? category,
     String? farm,
@@ -32,7 +31,6 @@ class EggStoreApi {
     }
   }
 
-  // Mendapatkan detail produk telur berdasarkan ID
   Future<EggProduct> getProductById(String id) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/eggs/$id'));

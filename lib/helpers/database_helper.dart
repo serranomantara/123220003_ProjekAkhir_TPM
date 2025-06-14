@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-// Import for desktop/web support
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'dart:io' show Platform;
@@ -26,7 +25,6 @@ class DatabaseHelper {
     return _db!;
   }
 
-  // Table names (same as before)
   static const String tableEggProduct = 'egg_products';
   static const String tableUser = 'users';
   static const String tableCartItem = 'cart_items';
@@ -35,12 +33,9 @@ class DatabaseHelper {
   static const String tableFeedback = 'feedbacks';
 
   Future<Database> _initDb() async {
-    // Initialize databaseFactory for different platforms
     if (kIsWeb) {
-      // For web platform, use sqflite_common_ffi with IndexedDB
       databaseFactory = databaseFactoryFfi;
     } else {
-      // For mobile/desktop platforms
       if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
         sqfliteFfiInit();
         databaseFactory = databaseFactoryFfi;
@@ -57,16 +52,13 @@ class DatabaseHelper {
     );
   }
 
-  // Web-specific database initialization
   Future<Database> _initWebDb() async {
-    // For web, we need to use a different approach
     databaseFactory = databaseFactoryFfi;
     final db = await databaseFactory.openDatabase('egg_store.db');
     return db;
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Create egg_products table
     await db.execute('''
       CREATE TABLE $tableEggProduct (
         id TEXT PRIMARY KEY,
@@ -88,7 +80,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create users table
     await db.execute('''
       CREATE TABLE $tableUser (
         id TEXT PRIMARY KEY,
@@ -104,7 +95,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create cart_items table
     await db.execute('''
       CREATE TABLE $tableCartItem (
         id TEXT PRIMARY KEY,
@@ -120,7 +110,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create orders table
     await db.execute('''
       CREATE TABLE $tableOrder (
         id TEXT PRIMARY KEY,
@@ -140,7 +129,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create order_items table
     await db.execute('''
       CREATE TABLE $tableOrderItem (
         id TEXT PRIMARY KEY,
@@ -155,7 +143,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create feedbacks table
     await db.execute('''
       CREATE TABLE $tableFeedback (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -165,7 +152,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create indexes for better performance
     await db.execute('CREATE INDEX idx_cart_user ON $tableCartItem (userId)');
     await db.execute('CREATE INDEX idx_order_user ON $tableOrder (userId)');
     await db.execute(
@@ -201,7 +187,6 @@ class DatabaseHelper {
     }
   }
 
-  // Helper method to convert EggProduct to Map for database
   Map<String, dynamic> _eggProductToMap(EggProduct product) {
     return {
       'id': product.id,
@@ -223,7 +208,6 @@ class DatabaseHelper {
     };
   }
 
-  // Helper method to convert Map from database to EggProduct
   EggProduct _mapToEggProduct(Map<String, dynamic> map) {
     return EggProduct(
       id: map['id'] as String,
@@ -608,7 +592,6 @@ class DatabaseHelper {
     return result;
   }
 
-  // Clear all data
   Future<void> clearAllData() async {
     final dbClient = await db;
     await dbClient.delete(tableOrderItem);
@@ -619,7 +602,6 @@ class DatabaseHelper {
     await dbClient.delete(tableEggProduct);
   }
 
-  // Close database
   Future<void> close() async {
     if (_db != null) {
       await _db!.close();
@@ -627,7 +609,6 @@ class DatabaseHelper {
     }
   }
 
-  // Transaction example for creating order with items
   Future<bool> createOrderWithItems(
     Order order,
     List<CartItem> cartItems,
@@ -636,10 +617,8 @@ class DatabaseHelper {
 
     try {
       await dbClient.transaction((txn) async {
-        // Insert order
         await txn.insert(tableOrder, order.toMap());
 
-        // Insert order items and update product stock
         for (var cartItem in cartItems) {
           final orderItem = {
             'id': DateTime.now().millisecondsSinceEpoch.toString(),
@@ -653,14 +632,12 @@ class DatabaseHelper {
 
           await txn.insert(tableOrderItem, orderItem);
 
-          // Update product stock
           await txn.rawUpdate(
             'UPDATE $tableEggProduct SET stock = stock - ? WHERE id = ?',
             [cartItem.quantity, cartItem.productId],
           );
         }
 
-        // Clear user's cart
         await txn.delete(
           tableCartItem,
           where: 'userId = ?',
@@ -675,13 +652,11 @@ class DatabaseHelper {
     }
   }
 
-  // Initialize with sample data
   Future<void> initializeSampleData() async {
     final dbClient = await db;
 
-    // Check if products already exist
     final count = await getProductCount();
-    if (count > 0) return; // Data already exists
+    if (count > 0) return; 
 
     // Insert sample products
     final sampleProducts = [

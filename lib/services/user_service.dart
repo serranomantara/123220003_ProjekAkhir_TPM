@@ -6,25 +6,21 @@ class UserService {
   static const String _usersKey = 'users';
   static const String _loggedInKey = 'logged_in_user';
 
-  /// Fungsi untuk meng-hash password menggunakan SHA-256
   static String _hashPassword(String password) {
     var bytes = utf8.encode(password);
     var digest = sha256.convert(bytes);
     return digest.toString();
   }
 
-  /// Register user baru dengan password yang di-hash
   static Future<dynamic> register(String username, String password) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final users = prefs.getStringList(_usersKey) ?? [];
 
-      // Cek apakah username sudah ada
       if (users.any((u) => u.split(':')[0] == username)) {
         return 'Username sudah digunakan';
       }
 
-      // Validasi input
       if (username.isEmpty || password.isEmpty) {
         return 'Username dan password tidak boleh kosong';
       }
@@ -37,7 +33,6 @@ class UserService {
         return 'Password minimal 6 karakter';
       }
 
-      // Hash password sebelum disimpan
       final hashedPassword = _hashPassword(password);
       users.add('$username:$hashedPassword');
       await prefs.setStringList(_usersKey, users);
@@ -48,7 +43,6 @@ class UserService {
     }
   }
 
-  /// Login dengan membandingkan hash password
   static Future<dynamic> login(String username, String password) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -81,7 +75,6 @@ class UserService {
     }
   }
 
-  /// Logout user
   static Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -92,7 +85,6 @@ class UserService {
     }
   }
 
-  /// Mendapatkan user yang sedang login
   static Future<String?> getLoggedInUser() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -102,12 +94,10 @@ class UserService {
     }
   }
 
-  /// Mendapatkan nama user yang sedang login (alias untuk getLoggedInUser)
   static Future<String?> getCurrentUserName() async {
     return await getLoggedInUser();
   }
 
-  /// Fungsi untuk mengubah password (opsional)
   static Future<dynamic> changePassword(
     String username,
     String oldPassword,
@@ -117,7 +107,6 @@ class UserService {
       final prefs = await SharedPreferences.getInstance();
       final users = prefs.getStringList(_usersKey) ?? [];
 
-      // Validasi input
       if (newPassword.length < 6) {
         return 'Password baru minimal 6 karakter';
       }
@@ -125,7 +114,6 @@ class UserService {
       final oldHashedPassword = _hashPassword(oldPassword);
       final newHashedPassword = _hashPassword(newPassword);
 
-      // Cari dan update password user
       for (int i = 0; i < users.length; i++) {
         final parts = users[i].split(':');
         if (parts.length >= 2 &&
@@ -143,7 +131,6 @@ class UserService {
     }
   }
 
-  /// Fungsi untuk menghapus semua data user (untuk debugging/testing)
   static Future<void> clearAllUsers() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -154,7 +141,6 @@ class UserService {
     }
   }
 
-  /// Mendapatkan jumlah user yang terdaftar (untuk debugging)
   static Future<int> getUserCount() async {
     try {
       final prefs = await SharedPreferences.getInstance();

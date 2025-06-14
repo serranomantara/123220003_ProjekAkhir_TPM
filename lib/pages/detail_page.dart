@@ -45,11 +45,10 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
     'London': 'London Time (GMT)',
   };
 
-  // Data lokasi toko di Jogja
+  // Data lokasi toko di Jogja untuk setiap produk
   List<Map<String, dynamic>> get storeLocations {
-    // Return only stores that carry this specific product
     switch (widget.product.id) {
-      case 1: // Product ID 1
+      case 1: // Telur Ayam Super
         return [
           {
             'name': 'Toko Telur Seturan',
@@ -59,6 +58,9 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
             'phone': '081234567890',
             'hours': '08:00 - 20:00 (Setiap Hari)',
           },
+        ];
+      case 2: // Telur Ayam Negeri
+        return [
           {
             'name': 'Toko Telur Condongcatur',
             'address': 'Jl. Ringroad Utara No. 12, Condongcatur, Sleman',
@@ -68,7 +70,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
             'hours': '07:30 - 19:30 (Setiap Hari)',
           },
         ];
-      case 2: // Product ID 2
+      case 3: // Telur Bebek
         return [
           {
             'name': 'Toko Telur Babarsari',
@@ -79,7 +81,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
             'hours': '08:00 - 21:00 (Setiap Hari)',
           },
         ];
-      case 3: // Product ID 3
+      case 4: // Telur Omega
         return [
           {
             'name': 'Toko Telur Demangan',
@@ -89,6 +91,9 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
             'phone': '081234567893',
             'hours': '09:00 - 20:00 (Senin-Sabtu)',
           },
+        ];
+      case 5: // Telur Puyuh
+        return [
           {
             'name': 'Toko Telur Pujokusuman',
             'address':
@@ -98,16 +103,8 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
             'phone': '081234567894',
             'hours': '08:30 - 19:30 (Setiap Hari)',
           },
-          {
-            'name': 'Toko Telur Seturan',
-            'address': 'Jl. Seturan Raya No. 5, Depok, Sleman',
-            'lat': -7.7619,
-            'lng': 110.4081,
-            'phone': '081234567890',
-            'hours': '08:00 - 20:00 (Setiap Hari)',
-          },
         ];
-      default: // Default case
+      default: // Produk lainnya
         return [
           {
             'name': 'Toko Telur Pusat',
@@ -126,17 +123,14 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
     super.initState();
     final cartService = Provider.of<CartService>(context, listen: false);
 
-    // Initialize with cart service values if they exist
     selectedTimezone = cartService.lockedTimezone ?? 'WIB';
 
-    // Handle currency initialization based on timezone
     if (cartService.lockedCurrency != null) {
       selectedCurrency = cartService.lockedCurrency!;
     } else {
       selectedCurrency = _getCurrencyForTimezone(selectedTimezone);
     }
 
-    // Store the previous currency (excluding locked currencies)
     previousCurrency = selectedCurrency;
   }
 
@@ -543,7 +537,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                             onChanged: (value) {
                                               if (value != null) {
                                                 setState(() {
-                                                  // Store previous currency only if not in cart
                                                   if (cartService
                                                       .cartItems
                                                       .isEmpty) {
@@ -552,7 +545,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                                   }
 
                                                   selectedTimezone = value;
-                                                  // Automatically set currency based on timezone
                                                   selectedCurrency =
                                                       _getCurrencyForTimezone(
                                                         value,
@@ -602,7 +594,6 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
                                                   ),
                                               items: ['IDR', 'USD', 'EUR', 'GBP']
                                                   .where((currency) {
-                                                    // Only show currencies that match the timezone
                                                     switch (selectedTimezone) {
                                                       case 'WIB':
                                                       case 'WITA':
@@ -1203,7 +1194,7 @@ class _EggProductDetailPageState extends State<EggProductDetailPage> {
               topRight: Radius.circular(16),
             ),
             child: Image.asset(
-              'assets/store_placeholder.jpg', // Ganti dengan gambar toko jika ada
+              'assets/store_placeholder.jpg',
               height: 120,
               width: double.infinity,
               fit: BoxFit.cover,

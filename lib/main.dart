@@ -9,7 +9,7 @@ import 'services/cart_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('id_ID', null); // Initialize locale
+  await initializeDateFormatting('id_ID', null); 
   runApp(const MyApp());
 }
 
